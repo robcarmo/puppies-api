@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Puppies Social Media API - Implementation Plan</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 100%;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            page-break-after: avoid;
+        }
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #95a5a6;
+            padding-bottom: 8px;
+            margin-top: 30px;
+            page-break-after: avoid;
+        }
+        h3 {
+            color: #7f8c8d;
+            page-break-after: avoid;
+        }
+        h4 {
+            color: #95a5a6;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            page-break-inside: avoid;
+        }
+        blockquote {
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+            color: #555;
+            font-style: italic;
+            margin: 20px 0;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            page-break-inside: avoid;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        hr {
+            border: none;
+            border-top: 2px solid #ecf0f1;
+            margin: 30px 0;
+        }
+        .github-link {
+            background: #f6f8fa;
+            border: 2px solid #3498db;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .github-link strong {
+            color: #3498db;
+            font-size: 1.1em;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            page-break-inside: avoid;
+        }
+        ul, ol {
+            margin: 10px 0;
+        }
+        li {
+            margin: 5px 0;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+<h1>Puppies Social Media API - Backend Implementation Plan</h1>
+
+<p><strong>Author:</strong> Roberto<br>
+<strong>Date:</strong> December 2025</p>
+
+<div class="github-link">
+    <strong>📦 Complete Code Implementation Available At:</strong><br>
+    <a href="https://github.com/robcarmo/puppies-api">https://github.com/robcarmo/puppies-api</a>
+</div>
+
+<hr>
+
+<h2>Overview</h2>
+
+<p>This document presents a comprehensive implementation plan for the backend of a puppy-focused social platform supporting posts, likes, comments, and follows. The system is designed to be scalable, reliable, secure, and easy to evolve while remaining cost-effective.</p>
+
+<blockquote>
+<strong>Note:</strong> The complete code implementation draft is available at:<br>
+<strong>https://github.com/robcarmo/puppies-api</strong>
+</blockquote>
+
+<hr>
+
+<h2>1. High-Level Architecture</h2>
+
+<h3>Core Design Principles</h3>
+
+<p>To support a global user base with viral traffic spikes, the system follows a <strong>microservices-based, event-driven architecture</strong>. This ensures:</p>
+
+<ul>
+<li><strong>Scalability:</strong> Independent scaling of read/write paths and domain services.</li>
+<li><strong>Reliability:</strong> Failure isolation and asynchronous processing for heavy tasks.</li>
+<li><strong>Evolvability:</strong> Clear boundaries allowing teams to iterate on services (e.g., Feed, Users) independently.</li>
+</ul>
+
+<h3>System Components</h3>
+
+<p>The architecture is composed of the following key layers:</p>
+
+<h4>1. Edge Layer (API Gateway & CDN)</h4>
+
+<ul>
+<li><strong>CDN (CloudFront/Cloud CDN):</strong> Caches static assets (images/videos) and terminates TLS close to the user.</li>
+<li><strong>API Gateway / Load Balancer:</strong> Handles rate limiting, WAF protection, and routes traffic to internal services.</li>
+</ul>
+
+<h4>2. Service Layer (Kubernetes)</h4>
+
+<ul>
+<li><strong>API Service (BFF):</strong> Stateless REST API handling request validation, orchestration, and response shaping.</li>
+<li><strong>Domain Services:</strong>
+<ul>
+<li><code>UserService</code>: Profiles, auth, follow relationships.</li>
+<li><code>PostService</code>: Content creation, media metadata.</li>
+<li><code>InteractionService</code>: Likes, comments.</li>
+<li><code>FeedService</code>: Personalized timeline generation.</li>
+</ul>
+</li>
+<li><strong>Background Workers:</strong> Async consumers for feed fan-out, notifications, and analytics.</li>
+</ul>
+
+<h4>3. Data Layer</h4>
+
+<ul>
+<li><strong>Primary DB (PostgreSQL):</strong> System of record for relational integrity.</li>
+<li><strong>Cache (Redis):</strong> Low-latency access for sessions, rate limits, and pre-computed feeds.</li>
+<li><strong>Object Storage (S3/GCS):</strong> Durable storage for user-uploaded media.</li>
+</ul>
+
+<h4>4. Messaging (Kafka)</h4>
+
+<ul>
+<li>Acts as the backbone for eventual consistency. Decouples write-heavy operations from read-heavy side effects.</li>
+</ul>
+
+<h3>Architecture Diagram</h3>
+
+<img src="architecture-diagram.png" alt="Architecture Diagram" style="max-width: 100%; margin: 20px 0;">
+
+<p><em>The diagram illustrates the complete system architecture with clear separation of concerns across edge, service, data, and messaging layers.</em></p>
+
+<div class="page-break"></div>
+
+<h2>2. Data Model & Storage Strategy</h2>
+
+<h3>Schema Design</h3>
+
+<p>We use a relational model to enforce integrity, particularly for social graph data.</p>
+
+<ul>
+<li><strong>Users:</strong> <code>id, username, email, password_hash, created_at</code></li>
+<li><strong>Posts:</strong> <code>id, user_id, content, media_url, media_type, created_at</code>
+<ul><li><em>Index:</em> <code>(user_id, created_at DESC)</code> for fast author profile feeds.</li></ul>
+</li>
+<li><strong>Follows:</strong> <code>follower_id, followee_id, created_at</code> (Composite PK)
+<ul><li><em>Index:</em> Both columns indexed for bidirectional graph traversal.</li></ul>
+</li>
+<li><strong>Likes:</strong> <code>user_id, post_id, created_at</code> (Composite PK)</li>
+<li><strong>FeedEntries:</strong> <code>user_id (owner), post_id, created_at</code>
+<ul><li><em>Optimization:</em> Materialized view of user's timeline, populated asynchronously.</li></ul>
+</li>
+</ul>
+
+<h3>Handling Scale & Hotspots</h3>
+
+<h4>1. The "Influencer" Problem</h4>
+
+<p>A user with 1M followers would trigger 1M writes on every post (Fan-out on Write).</p>
+
+<p><strong>Solution: Hybrid Approach</strong></p>
+
+<ul>
+<li><strong>Standard Users (&lt;10k followers):</strong> Push model. Workers insert <code>FeedEntry</code> for all followers. Fast reads.</li>
+<li><strong>VIPs (&gt;10k followers):</strong> Pull model. Do not fan-out. Fetch VIP posts dynamically and merge with pre-computed feed.</li>
+</ul>
+
+<h4>2. Viral Content</h4>
+
+<p>High concurrency on a single row (e.g., counting likes).</p>
+
+<p><strong>Solution:</strong> Buffer likes in Redis and flush to DB in batches, or use approximate counters for display.</p>
+
+<hr>
+
+<h2>3. API Surface & Security</h2>
+
+<h3>API Design (REST)</h3>
+
+<p>We expose a versioned REST API (<code>/v1/</code>) documented via OpenAPI 3.0.</p>
+
+<p><strong>Key Endpoints:</strong></p>
+
+<ul>
+<li><code>POST /v1/posts</code>: Create post (returns presigned upload URL for media)</li>
+<li><code>GET /v1/feed</code>: Retrieve personalized feed (cursor-based pagination)</li>
+<li><code>POST /v1/posts/{id}/likes</code>: Idempotent like action</li>
+<li><code>POST /v1/users/{id}/follow</code>: Follow a user</li>
+<li><code>GET /v1/users/{id}/posts</code>: User timeline</li>
+</ul>
+
+<h3>Security & Authentication</h3>
+
+<ul>
+<li><strong>Authentication:</strong> OAuth2/OIDC (Google/Apple) + JWT Access Tokens (15 min TTL)</li>
+<li><strong>Authorization:</strong> Role-Based Access Control (RBAC) enforced at the API layer</li>
+<li><strong>Rate Limiting:</strong> Token bucket algorithm in Redis
+<ul>
+<li><em>Global:</em> 1000 req/min per IP</li>
+<li><em>Sensitive:</em> 10 req/min for <code>POST /posts</code> to prevent spam</li>
+</ul>
+</li>
+</ul>
+
+<h3>Security Measures</h3>
+
+<ul>
+<li><strong>Input Validation:</strong> Pydantic models for request validation</li>
+<li><strong>SQL Injection Prevention:</strong> Parameterized queries via ORM (SQLAlchemy)</li>
+<li><strong>CORS:</strong> Whitelist trusted origins</li>
+<li><strong>Content Moderation:</strong> ML-based filtering (GCP Vision API)</li>
+<li><strong>Encryption:</strong> TLS 1.3 in transit; AES-256 at rest</li>
+</ul>
+
+<div class="page-break"></div>
+
+<h2>4. Platform & Infrastructure</h2>
+
+<h3>Technology Choices</h3>
+
+<ul>
+<li><strong>Compute:</strong> Kubernetes (GKE) with HPA based on CPU/Memory and custom metrics</li>
+<li><strong>Database:</strong> Managed PostgreSQL (Cloud SQL) with Multi-AZ HA and Read Replicas</li>
+<li><strong>Messaging:</strong> Managed Kafka (Confluent Cloud) for event streaming</li>
+<li><strong>IaC:</strong> Terraform for reproducible environments across Dev, Staging, and Prod</li>
+</ul>
+
+<h3>Cost Management</h3>
+
+<ul>
+<li><strong>Spot Instances:</strong> Preemptible nodes for background workers (~70% savings)</li>
+<li><strong>Storage Tiering:</strong> Lifecycle policies to move old media to Nearline/Coldline after 30 days</li>
+<li><strong>Auto-scaling:</strong> Aggressive scale-down during off-peak hours</li>
+<li><strong>CDN Optimization:</strong> Cache-Control headers, Brotli/gzip compression</li>
+</ul>
+
+<h3>Infrastructure as Code Example</h3>
+
+<pre><code>module "gke" {
+  source     = "./modules/gke"
+  project_id = var.project_id
+  region     = var.region
+  network    = module.vpc.network_name
+}
+
+module "cloudsql" {
+  source     = "./modules/cloudsql"
+  project_id = var.project_id
+  region     = var.region
+  network    = module.vpc.network_self_link
+}
+</code></pre>
+
+<hr>
+
+<h2>5. Delivery & Operations</h2>
+
+<h3>CI/CD Pipeline</h3>
+
+<ol>
+<li><strong>CI:</strong> On PR, run unit tests, linting, and SAST (SonarQube). Build Docker images.</li>
+<li><strong>CD (Staging):</strong> Deploy to staging namespace. Run integration tests and load tests.</li>
+<li><strong>CD (Production):</strong> Canary deployment. Route 5% traffic to new version. Monitor and roll out to 100%.</li>
+</ol>
+
+<h3>Observability</h3>
+
+<p><strong>Metrics (Prometheus/Grafana):</strong></p>
+<ul>
+<li><em>RED Method:</em> Rate, Errors, Duration for all HTTP endpoints</li>
+<li><em>Business Metrics:</em> Posts per minute, Active Users, Feed Latency</li>
+</ul>
+
+<p><strong>Tracing (OpenTelemetry):</strong> End-to-end tracing to identify bottlenecks</p>
+
+<p><strong>Logs (ELK/Loki):</strong> Structured JSON logs with <code>trace_id</code> for correlation</p>
+
+<h3>Key Metrics and SLOs</h3>
+
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>SLI</th>
+<th>SLO</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Feed latency</td>
+<td>p99 response time</td>
+<td>&lt; 500ms for 99.9% of requests</td>
+</tr>
+<tr>
+<td>API availability</td>
+<td>Success rate (non-5xx)</td>
+<td>&gt; 99.9% uptime</td>
+</tr>
+<tr>
+<td>Post creation</td>
+<td>p95 response time</td>
+<td>&lt; 300ms</td>
+</tr>
+<tr>
+<td>Cache hit ratio</td>
+<td>Redis hits / total requests</td>
+<td>&gt; 80% for feed endpoint</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Reliability & Recovery</h3>
+
+<p><strong>Circuit Breakers:</strong> If <code>FeedService</code> fails, fallback to cached "popular posts" list</p>
+
+<p><strong>Disaster Recovery:</strong></p>
+<ul>
+<li><strong>RPO:</strong> &lt; 5 min (Async replication to standby region)</li>
+<li><strong>RTO:</strong> &lt; 1 hour (Automated failover scripts)</li>
+<li><strong>Backups:</strong> Daily DB snapshots + Continuous WAL archiving</li>
+</ul>
+
+<div class="page-break"></div>
+
+<h2>Implementation Details</h2>
+
+<h3>Project Structure</h3>
+
+<p>The complete implementation is available at <strong>https://github.com/robcarmo/puppies-api</strong></p>
+
+<pre><code>puppies-api/
+├── app/
+│   ├── api/v1/          # API endpoints and routers
+│   ├── core/            # Configuration and database setup
+│   ├── domain/          # Business logic and models
+│   │   ├── users/       # User and Follow models
+│   │   ├── posts/       # Post models
+│   │   ├── interactions/ # Like and Comment models
+│   │   └── feed/        # Feed generation logic
+│   └── schemas/         # Pydantic validation models
+├── terraform/           # Infrastructure as Code (GCP)
+│   └── modules/         # VPC, GKE, CloudSQL, Memorystore
+├── docker-compose.yml   # Local development environment
+└── Dockerfile          # Container image definition
+</code></pre>
+
+<h3>Technology Stack</h3>
+
+<ul>
+<li><strong>Language:</strong> Python 3.9+</li>
+<li><strong>Framework:</strong> FastAPI</li>
+<li><strong>ORM:</strong> SQLAlchemy</li>
+<li><strong>Validation:</strong> Pydantic</li>
+<li><strong>Database:</strong> PostgreSQL 14</li>
+<li><strong>Cache:</strong> Redis 7</li>
+<li><strong>Messaging:</strong> Kafka</li>
+<li><strong>Container:</strong> Docker</li>
+<li><strong>Orchestration:</strong> Kubernetes (GKE)</li>
+</ul>
+
+<h3>Running Locally</h3>
+
+<pre><code># Start all services
+docker-compose up -d
+
+# Access API documentation
+open http://localhost:8000/docs
+</code></pre>
+
+<hr>
+
+<h2>Conclusion</h2>
+
+<p>This architecture balances scalability, reliability, security, and cost-effectiveness for a puppy-focused social platform. Key design decisions include:</p>
+
+<ul>
+<li><strong>Hybrid feed model</strong> to handle influencer hotspots</li>
+<li><strong>Event-driven architecture</strong> for decoupling and resilience</li>
+<li><strong>Cloud-native design</strong> with specific GCP service recommendations</li>
+<li><strong>Comprehensive observability</strong> with SLOs, dashboards, and alerting</li>
+<li><strong>Robust CI/CD</strong> with automated testing and safe deployments</li>
+<li><strong>Cost optimization</strong> through preemptible instances and tiered storage</li>
+</ul>
+
+<p>The system is designed to evolve: microservices enable independent scaling, versioned APIs allow backward-compatible changes, and IaC ensures reproducible environments.</p>
+
+<hr>
+
+<div class="github-link">
+    <strong>📦 For the complete code implementation, please visit:</strong><br>
+    <a href="https://github.com/robcarmo/puppies-api">https://github.com/robcarmo/puppies-api</a>
+</div>
+
+</body>
+</html>
