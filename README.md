@@ -39,42 +39,6 @@ The architecture is composed of the following key layers:
 
 ![Architecture Diagram](./docs/architecture-diagram.png)
 
-```mermaid
-graph TD
-    Client[Mobile/Web Clients] -->|HTTPS| CDN[CDN (Media)]
-    Client -->|HTTPS| LB[Load Balancer / WAF]
-    
-    LB --> API[API Gateway / Service]
-    
-    subgraph "Kubernetes Cluster"
-        API --> Auth[Auth Service]
-        API --> Post[Post Service]
-        API --> User[User Service]
-        API --> Feed[Feed Service]
-        
-        Worker[Background Workers]
-    end
-    
-    API -.-> Redis[(Redis Cache)]
-    Feed -.-> Redis
-    
-    Post --> Kafka{Kafka Event Bus}
-    User --> Kafka
-    
-    Kafka --> Worker
-    Worker --> Feed
-    Worker --> Notif[Notification Service]
-    
-    Post --> DB[(PostgreSQL Primary)]
-    User --> DB
-    Feed --> DB
-    
-    CDN -.-> S3[(Object Storage)]
-```
-
-*(See also [architecture.mmd](./architecture.mmd) for an editable version)*
-
-
 ---
 
 ## 2. Data Model & Storage Strategy
