@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "puppies-api"
+version = "0.1.0"
+description = "Puppies Social Media API"
+authors = ["Roberto <roberto@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.109.0"
+uvicorn = "^0.27.0"
+sqlalchemy = "^2.0.0"
+psycopg2-binary = "^2.9.0"
+redis = "^5.0.0"
+pydantic = {extras = ["email"], version = "^2.6.0"}
+pydantic-settings = "^2.1.0"
+kafka-python = "^2.0.0"
+python-multipart = "^0.0.9"
+httpx = "^0.26.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+black = "^24.0.0"
+isort = "^5.13.0"
+flake8 = "^7.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
